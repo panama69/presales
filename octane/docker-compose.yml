@@ -1,0 +1,27 @@
+version: '2'
+services:
+  octane_oracle:
+    image: alexeiled/docker-oracle-xe-11g
+    shm_size: 2g
+    mem_limit: 4g
+  octane_es:
+    image: elasticsearch:2.2
+    environment:
+      - ES_HEAP_SIZE=2G
+    mem_limit: 4g
+  octane:
+    image: hpsoftware/almoctane:12.53.12
+    ports:
+      - "8085:8080"
+    volumes:
+      - /opt/octane/conf:/opt/octane/conf
+      - /opt/octane/log:/opt/octane/log
+      - /opt/octane/repo:/opt/octane/repo
+    links:
+      - octane_oracle
+      - octane_es
+    mem_limit: 4g
+    env_file:
+      - ./octane.env
+    environment:
+      - DISABLE_VALIDATOR_MEMORY=true
