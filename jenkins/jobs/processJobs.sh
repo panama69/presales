@@ -1,6 +1,12 @@
 #!/bin/bash
 
-HOST="http://localhost:8085"
+if [[ $# -lt 1 ]] ; then
+    echo 'usage:  ./processJobs.sh http://<jenkinshost>:<port>'
+    echo '    if using accounts: ./processJobs.sh http://<username>:<userpassword>@<jenkinshost>:<port>
+    exit 1
+fi
+#HOST="http://localhost:8085"
+HOST="$1"
 
 clear
 echo Utility to Export or Import Jenkins Jobs
@@ -11,10 +17,10 @@ do
   case "$REPLY" in
     1)
       #check if location exists to place the exported jobs
-      rm -rf jobs
-      if [[ ! -d ./jobs ]]
+      EXP_JOBS="exported_jobs"
+      if [[ ! -d ./"$EXP_JOBS" ]]
       then
-        mkdir jobs
+        mkdir "$EXP_JOBS"
       fi
       #check if jar file exists for use and download if doesnt
       #this is simple in that assumption is the HOST is accessible
@@ -29,12 +35,12 @@ do
       for job in `java -jar jenkins-cli.jar -s $HOST list-jobs`
       do
         echo Exporting: $job
-        curl $HOST/job/$job/config.xml -o ./jobs/$job.xml &> /dev/null
+        curl $HOST/job/$job/config.xml -o ./"$EXP_JOBS"/$job.xml &> /dev/null
       done
       break
       ;;
     2)
-      for job in `ls jobs/*.xml`
+      for job in `ls "$EXP_JOBS"/*.xml`
       do
         echo Importing: $job
         jobName=`echo $job|awk -F"/" '{print $2}'|awk -F"." '{print $1}'`
