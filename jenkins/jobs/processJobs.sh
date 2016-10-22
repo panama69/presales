@@ -2,7 +2,7 @@
 
 if [[ $# -lt 1 ]] ; then
     echo 'usage:  ./processJobs.sh http://<jenkinshost>:<port>'
-    echo '    if using accounts: ./processJobs.sh http://<username>:<userpassword>@<jenkinshost>:<port>
+    echo '    if using accounts: ./processJobs.sh http://<username>:<userpassword>@<jenkinshost>:<port>'
     exit 1
 fi
 #HOST="http://localhost:8085"
