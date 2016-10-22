@@ -7,21 +7,41 @@ if [[ $# -lt 1 ]] ; then
 fi
 #HOST="http://localhost:8085"
 HOST="$1"
+ALLGOOD=0
+EXP_JOBS="exported_jobs"
 
 clear
 echo Utility to Export or Import Jenkins Jobs
-PS3='Please enter your choice to install: '
+PS3='Please enter the number of your choice to perform: '
 options=("Export jobs" "Import jobs")
 select opt in "${options[@]}" "Quit"
 do
   case "$REPLY" in
     1)
       #check if location exists to place the exported jobs
-      EXP_JOBS="exported_jobs"
+      if [[ -d ./"$EXP_JOBS" ]]
+      then
+           PS3='An export folder exists.  Do you want to overwrite?'
+           yesno=("Yes" "No")
+           select ans in "${yesno[@]}"
+           do
+                case "$REPLY" in
+                     1|'Y'|'y')
+                          ALLGOOD=1
+                          break;;
+                     2|'N'|'n')
+                          ALLGOOD=0
+                          break;;
+                esac
+           done
+      fi
       if [[ ! -d ./"$EXP_JOBS" ]]
       then
         mkdir "$EXP_JOBS"
       fi
+
+   if [[ "$ALLGOOD" -eq 1 ]]
+   then
       #check if jar file exists for use and download if doesnt
       #this is simple in that assumption is the HOST is accessible
       if [[ ! -f ./jenkins-cli.jar ]]
@@ -37,6 +57,7 @@ do
         echo Exporting: $job
         curl $HOST/job/$job/config.xml -o ./"$EXP_JOBS"/$job.xml &> /dev/null
       done
+    fi
       break
       ;;
     2)
