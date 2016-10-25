@@ -27,9 +27,30 @@ echo sleeping for 1 minute to let octane start
 sleep 65s
 
 # print docker output
-docker logs nga
+#docker logs octane
 
 # print wrapper log
-#tail -n 200 /var/log/nga/wrapper.log
-#tail -n 30 /opt/octane/log/wrapper.log
-tail -f /opt/octane/log/wrapper.log
+counter=1
+while [[ `cat /opt/octane/log/wrapper.log|grep '| Server is ready! (Boot time'|wc -l` -lt 1 ]]
+do
+   sleep 10
+   clear
+   echo still starting.."$counter"
+   if [[ $counter -le 10 ]]
+   then
+      (( counter++ ))
+   else
+      counter=-1
+      break;
+   fi
+
+done
+
+if [[ $counter -lt 0 ]]
+then
+   tail -20 /opt/octane/log/wrapper.log
+   echo
+   echo Check if Octane came up as it looks like there might be an issue
+else
+   tail -n 2 /opt/octane/log/wrapper.log
+fi
