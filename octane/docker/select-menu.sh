@@ -131,8 +131,8 @@ function start_octane ()
      cmd="cat /opt/octane/log/wrapper.log"
      searchstr="Server is ready! (Boot time"
      echo "Waiting on Octane to be ready"
-     echo "   -> sleeping for 1 min before checking"
-     sleep 65
+     echo "   -> sleeping for 30 sec before checking"
+     sleep 30
      if [[ `wait_on "$cmd" "$searchmsg"` ]]
      then
           tail -2 /opt/octane/log/wrapper.log
@@ -168,10 +168,13 @@ function download_files ()
        else
             cd /opt && { \
                curl -O http://flynnshome.com/downloads/"$file" ; \
-               echo "Uncompressing $processing data" ; \
-               tar -zxf /opt/"$file" ; \
                cd -; }
        fi
+
+       echo "Uncompressing $processing data" 
+       cd /opt && { \
+          tar -zxf /opt/"$file" "$processing"; \
+          cd -; }
 }
 
 function deploy_octane ()
@@ -182,18 +185,38 @@ function deploy_octane ()
      start_octane $octane_port $octane_domain $octane_admin_password $network $octane_container $octane_image
 }
 
-containers_exist
-if [[ $? -ne 0 ]]
-then
-     dialog --title "WARNING" --msgbox "One of these containers exist: $octane_container, $es_container, $ora_container You must take care of them before performing this operation" 10 70
-     echo "One of these containers exist: $octane_container $es_container $ora_container"
-     echo You must take care of them before you perform this operation
-     exit -1
-fi
+function stop_remove_containers ()
+{
+     echo Stopping containers
+     `docker stop "$octane_container" "$ora_container" "$es_container"`
+     echo Removing containers
+     `docker rm "$octane_container" "$ora_container" "$es_container"`
+
+}
+
 
 # using the dialog utility https://linux.die.net/man/1/dialog
 # other resource www.linuxjournal.com/article/2807
 # other resource www.linuxcommand.org/lc3_adv_dialog.php 
+# other http://jrgraphix.net/man/D/dialog
+dialog --title "sudo" --yesno "This utility requires 'sudo'\n\nIf you didn't run this as:\n     sudo ./select-menu.sh\n\nPlease exit and restart.\n\nDo you wish to continue?" 20 40
+if [[ $? -ne 0 ]]
+then
+     exit -1
+fi
+
+containers_exist
+if [[ $? -ne 0 ]]
+then
+          dialog --title "WARNING" --defaultno --yesno "One of these containers exist:\n     $octane_container\n     $es_container\n     $ora_container\nYou must take care of them before performing this operation.\n\n         DO YOU WANT TO STOP AND REMOVE THEM" 20 70
+     if [[ $? -eq 0 ]]
+     then
+	stop_remove_containers
+     else
+        exit -1
+     fi
+fi
+
 cmd=(dialog --menu "Select options:" 22 76 16 )
 options=(1 "Octane w/data" 2 "MT Octane" 3 "New Octane" 4 "Quit/Exit")
 choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
@@ -206,9 +229,9 @@ case $choice in
        have_network_connection
        if [[ $? ]]
        then
-            rm -rf /opt/octane /opt/oracle /opt/elasticsearch
-            download_files "Octane" "$octane_data"
-            download_files "Oracle" "$oracle_data"
+            sudo rm -rf /opt/octane /opt/oracle /opt/elasticsearch
+            download_files "octane" "$octane_data"
+            download_files "oracle" "$oracle_data"
             deploy_octane
        fi
        ;;
@@ -219,9 +242,9 @@ case $choice in
        have_network_connection
        if [[ $? ]]
        then
-            rm -rf /opt/octane /opt/oracle /opt/elasticsearch
-            download_files "Octane" "$octane_data"
-            download_files "Oracle" "$oracle_data"
+            sudo rm -rf /opt/octane /opt/oracle /opt/elasticsearch
+            download_files "octane" "$octane_data"
+            download_files "oracle" "$oracle_data"
             deploy_octane
        fi
        ;;
@@ -230,7 +253,7 @@ case $choice in
        have_network_connection
        if [[ $? ]]
        then
-            rm -rf /opt/octane /opt/oracle /opt/elasticsearch
+            sudo rm -rf /opt/octane /opt/oracle /opt/elasticsearch
             deploy_octane
        fi
        ;;
