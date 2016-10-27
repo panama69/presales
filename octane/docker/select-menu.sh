@@ -44,7 +44,7 @@ function have_network_connection ()
 #    2 - search_string
 function wait_on ()
 {
-     #echo wait_on "$1" "$2"
+     #echo wait_on ">$1<" ">$2<"
      # wait for process to be up by checking the logs
      counter=1
      found=0
@@ -90,7 +90,7 @@ function create_network ()
 function start_oracle ()
 {
 
-     docker run -d -p $1:8080 -v /opt/oracle:/u01/app/oracle --shm-size=2g --net $2 --restart=always --name $3 $4
+     docker run -d -p $1:8080 -v /opt/oradata:/u01/app/oracle --shm-size=2g --net $2 --restart=always --name $3 $4
 
      searchmsg="Database ready to use"
      # Wait for the db to be up and ready
@@ -98,7 +98,8 @@ function start_oracle ()
      echo "   -> sleeping for 20 sec before checking"
      sleep 20
      cmd="docker logs $3"
-     if [[ `wait_on "$cmd" "$searchmsg"` ]]
+     wait_on "$cmd" "$searchmsg"
+     if [[ $? -eq 0 ]]
      then
           echo Database is ready
      else
@@ -133,7 +134,8 @@ function start_octane ()
      echo "Waiting on Octane to be ready"
      echo "   -> sleeping for 30 sec before checking"
      sleep 30
-     if [[ `wait_on "$cmd" "$searchmsg"` ]]
+     wait_on "$cmd" "$searchstr"
+     if [[ $? -eq 0 ]]
      then
           tail -2 /opt/octane/log/wrapper.log
      else
@@ -173,7 +175,7 @@ function download_files ()
 
        echo "Uncompressing $processing data" 
        cd /opt && { \
-          tar -zxf /opt/"$file" "$processing"; \
+          tar -zxf /opt/"$file" "$processing" ; \
           cd -; }
 }
 
@@ -192,6 +194,11 @@ function stop_remove_containers ()
      echo Removing containers
      `docker rm "$octane_container" "$ora_container" "$es_container"`
 
+}
+
+function remove_data_folders ()
+{
+     sudo rm -rf /opt/octane /opt/oradata /opt/elasticsearch
 }
 
 
@@ -225,26 +232,26 @@ case $choice in
      1)
        echo "Creating Octane deployment with data"
        octane_data=octane-data-0.1.tar.gz
-       oracle_data=oracle-data-0.1.tar.gz
+       oracle_data=oradata-data-0.1.tar.gz
        have_network_connection
        if [[ $? ]]
        then
-            sudo rm -rf /opt/octane /opt/oracle /opt/elasticsearch
+            remove_data_folders
             download_files "octane" "$octane_data"
-            download_files "oracle" "$oracle_data"
+            download_files "oradata" "$oracle_data"
             deploy_octane
        fi
        ;;
      2)
        echo "Creating empty Octane deployment"
        octane_data=octane-mt-0.1.tar.gz
-       oracle_data=oracle-mt-0.1.tar.gz
+       oracle_data=oradata-mt-0.1.tar.gz
        have_network_connection
        if [[ $? ]]
        then
-            sudo rm -rf /opt/octane /opt/oracle /opt/elasticsearch
+            remove_data_folders
             download_files "octane" "$octane_data"
-            download_files "oracle" "$oracle_data"
+            download_files "oradata" "$oracle_data"
             deploy_octane
        fi
        ;;
@@ -253,7 +260,7 @@ case $choice in
        have_network_connection
        if [[ $? ]]
        then
-            sudo rm -rf /opt/octane /opt/oracle /opt/elasticsearch
+            remove_data_folders
             deploy_octane
        fi
        ;;
