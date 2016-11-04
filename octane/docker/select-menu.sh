@@ -24,7 +24,7 @@ es_image="elasticsearch:2.2"
 #octane values
 #
 octane_port=8085
-octane_domain="flynn.net"
+octane_domain="flynn.home"
 octane_admin_password="HPALMdem0s"
 octane_container="octane"
 octane_image="hpsoftware/almoctane:12.53.12"
@@ -48,10 +48,13 @@ function wait_on ()
      # wait for process to be up by checking the logs
      counter=1
      found=0
+     progressStr="Checking.."
+     echo -ne $progressStr'\r'
      while [[ `$1 | grep "$2" | wc -l` -lt 1 ]]
      do
         sleep 10
-        echo Checking.."$counter"
+        progressStr=$progressStr"#"
+        echo -ne $progressStr'\r'
         if [[ $counter -le 10 ]]
         then
            (( counter++ ))
@@ -127,7 +130,9 @@ function start_elasticsearch()
 function start_octane ()
 {
      #echo $1 $2 $3 $4 $5 $6
-     docker run -d -p $1:8080 -e "SERVER_DOMAIN=$2" -e "ADMIN_PASSWORD=$3"  -e "DISABLE_VALIDATOR_MEMORY=true" -v /opt/octane/conf:/opt/octane/conf -v /opt/octane/log:/opt/octane/log -v /opt/octane/repo:/opt/octane/repo --net $4 --name $5 --restart=always $6
+     #Might need to turn off the proxy as set by Israel
+     # -e "http_proxy=" -e "https_proxy="
+     docker run -d -p $1:8080 -e "SERVER_DOMAIN=$2" -e "ADMIN_PASSWORD=$3"  -e "DISABLE_VALIDATOR_MEMORY=true" -v /opt/octane/conf:/opt/octane/conf -v /opt/octane/log:/opt/octane/log -v /opt/octane/repo:/opt/octane/repo --net $4 --name $5 --hostname="$5.$2" --restart=always $6
 
      cmd="cat /opt/octane/log/wrapper.log"
      searchstr="Server is ready! (Boot time"
