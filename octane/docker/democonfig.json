@@ -1,10 +1,10 @@
 {"Demos":[
   {"Name":"Corndog",
-   "Dependencies":[{"Network":"flynn_nw"}]
+   "Dependencies":[{"Networks":"flynn_nw"}]
   },
   {"Name":"Prontopuff",
    "Dependencies":[
-       {"Network":"panama_nw",
+       {"Networks":"panama_nw",
         "Systems":[
             {"Name":"Octane",
              "Assets":[]
@@ -21,7 +21,7 @@
   },
   {"Name":"Octane 12.53.12 - Clean",
     "Dependencies":
-      {"Network":["octane_nw"],
+      {"Networks":["octane_nw"],
        "Systems":[
           {"Name":"Octane",
              "Assets":[
@@ -71,7 +71,7 @@
           {"Name":"Jenkins",
            "Assets":[
              {"Name":"Jenkins",
-              "Network":"octane_nw",
+              "Networks":"octane_nw",
               "Configs":{
                  "ContainerName":"jenkins-dc",
                  "Image":"flynn/jenkins",
@@ -80,7 +80,7 @@
                  "Volumes":["/var/jenkins_home"]}
              },
              {"Name":"Jenkins",
-              "Network":"octane_nw",
+              "Networks":"octane_nw",
               "Configs":{
                  "ContainerName":"jenkins",
                  "Image":"flynn/jenkins",
@@ -96,7 +96,7 @@
   },
   {"Name":"Octane 12.53.12 - Empty",
     "Dependencies":
-      {"Network":["octane_nw"],
+      {"Networks":["octane_nw"],
        "Systems":[
           {"Name":"Octane",
              "Assets":[
@@ -155,7 +155,7 @@
           {"Name":"Jenkins",
            "Assets":[
              {"Name":"Jenkins",
-              "Network":"octane_nw",
+              "Networks":"octane_nw",
               "Configs":{
                  "ContainerName":"jenkins-dc",
                  "Image":"flynn/jenkins",
@@ -164,7 +164,7 @@
                  "Volumes":["/var/jenkins_home"]}
              },
              {"Name":"Jenkins",
-              "Network":"octane_nw",
+              "Networks":"octane_nw",
               "Configs":{
                  "ContainerName":"jenkins",
                  "Image":"flynn/jenkins",
@@ -180,7 +180,7 @@
   },
   {"Name":"Octane 12.53.12 - Demo Data",
     "Dependencies":
-      {"Network":["octane_nw"],
+      {"Networks":["octane_nw"],
        "Systems":[
           {"Name":"Octane",
              "Assets":[
@@ -239,7 +239,7 @@
           {"Name":"Jenkins",
            "Assets":[
              {"Name":"Jenkins",
-              "Network":"octane_nw",
+              "Networks":"octane_nw",
               "Configs":{
                  "ContainerName":"jenkins-dc",
                  "Image":"flynn/jenkins",
@@ -248,7 +248,7 @@
                  "Volumes":["/var/jenkins_home"]}
              },
              {"Name":"Jenkins",
-              "Network":"octane_nw",
+              "Networks":"octane_nw",
               "Configs":{
                  "ContainerName":"jenkins",
                  "Image":"flynn/jenkins",
@@ -262,15 +262,15 @@
          ]
       }
   },
-  {"Name":"Octane 12.53.16 alpha (v1)",
+  {"Name":"Octane 12.53.16 alpha - Clean",
     "Dependencies":
-      {"Network":["octane_nw"],
+      {"Networks":["octane_nw"],
        "Systems":[
           {"Name":"Octane",
              "Assets":[
                 {"Name":"OracleXE",
                  "Configs":{
-                   "ContainerName":"octane_db",
+                   "ContainerName":"octane_oracle",
                    "Image":"sath89/oracle-xe-11g",
                     "Ports":["9080:8080"],
                     "Networks":["octane_nw"],
@@ -281,8 +281,8 @@
                 },
                 {"Name":"ElasticSearch",
                  "Configs":{
-                    "ContainerName":"octane_search",
-                    "Image":"elasticsearch:2.2",
+                    "ContainerName":"octane_es",
+                    "Image":"elasticsearch:2.4",
                     "Ports":[],
                     "Networks":["octane_nw"],
                     "DataContainers":[],
@@ -291,7 +291,7 @@
                 },
                 {"Name":"Octane",
                  "Configs":{
-                    "ContainerName":"octane_nga",
+                    "ContainerName":"octane",
                     "Image":"hpsoftware/almoctane:12.53.16-alpha",
                     "Ports":["8085:8080"],
                     "Networks":["octane_nw"],
@@ -314,25 +314,27 @@
           {"Name":"Jenkins",
            "Assets":[
              {"Name":"Jenkins",
-              "Network":"octane_nw",
+              "Networks":"octane_nw",
+              "Configs":{
+                 "ContainerName":"jenkins-dc",
+                 "Image":"flynn/jenkins",
+                 "Ports":[],
+                 "DataContainers":[],
+                 "Volumes":["/var/jenkins_home"]}
+             },
+             {"Name":"Jenkins",
+              "Networks":"octane_nw",
               "Configs":{
                  "ContainerName":"jenkins",
                  "Image":"flynn/jenkins",
                  "Ports":["8086:8080", "50000:50000"],
-                 "DataContainers":[
-                   {"Name":"JenkinsData",
-                    "Configs":{
-                      "ContainerName":"jenkins-dc",
-                      "Image":"flynn/jenkins",
-                      "Ports":[],
-                      "Volumes":["/var/jenkins_home"]
-                      }}],
+                 "DataContainers":["jenkins-dc"],
                  "Volumes":[]}
-             }
+               }
              ]},
           {"Name":"AOS",
            "Assets":[]}
-          ]
+         ]
       }
   }
  ]
