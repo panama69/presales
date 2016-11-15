@@ -77,7 +77,7 @@ function create_networks ()
          cmd="docker network ls | grep $networkName | wc -l"
          if [[ $(eval $cmd) -eq 0 ]]
          then
-            docker network create $1 > /dev/null
+            docker network create "$networkName" > /dev/null
             # quick check to see if the network was created or exists
             if [[ $(eval $cmd) -ne 1 ]]
             then
@@ -207,7 +207,7 @@ function start_OracleXE ()
 {
    docker_str=$(build_docker_string "$1")
    cmd="docker run -d --shm-size=2g --restart=always $docker_str"
-   echo "     $cmd"
+   echo "$cmd"
    eval $cmd
 
    searchmsg="\"Database ready to use\""
@@ -263,7 +263,18 @@ function start_Octane ()
    # -e "http_proxy=" -e "https_proxy="
    #docker run -d -p $1:8080 -e "SERVER_DOMAIN=$2" -e "ADMIN_PASSWORD=$3"  -e "DISABLE_VALIDATOR_MEMORY=true" -v /opt/octane/conf:/opt/octane/conf -v /opt/octane/log:/opt/octane/log -v /opt/octane/repo:/opt/octane/repo --net $4 --name $5 --hostname="$5.$2" --restart=always $6
 
-   cmd="tail -50 /opt/octane/log/wrapper.log"
+   #brute search for log folder
+   volumeList=`echo $1 |jq ".Configs.Volumes[]"`
+   for i in $volumeList
+   do
+      i=${i//\"} # remove all quotes.  assumpiton is a quoted string
+      # assumption is wrapper.log is found in the octane log folder
+      if [[ ${i##*/} = "log" ]]
+      then
+         logPath=${i%:*}
+      fi
+   done
+   cmd="tail -50 $logPath/wrapper.log"
    searchstr="\"Server is ready! (Boot time\""
    echo "Waiting on Octane to be ready"
    echo "   -> sleeping for 30 sec before checking"
@@ -271,14 +282,14 @@ function start_Octane ()
    wait_on "$cmd" "$searchstr"
    if [[ $? -eq 0 ]]
    then
-      tail -2 /opt/octane/log/wrapper.log
+      tail -2 $logPath/wrapper.log
    else
       echo WARNING -- Octane doesn\'t look like it came up
       echo
-      tail -10 /opt/octane/log/wrapper.log
+      tail -10 $logPath/wrapper.log
       echo
       echo Things could be just going slow or there could be an issue.
-      echo Look in the /opt/octane/log/wrapper.log file for
+      echo Look in the $logPath/wrapper.log file for
       echo     'Server is ready! (Boot time XX seconds)'
    fi
 }
@@ -297,12 +308,28 @@ function container_list ()
 function stop_remove_containers ()
 {
    containerList=$1
+   #create a list of folder mounts to be removed after container removed
+   for i in $containerList
+   do 
+      i=${i//\"}
+      if [[ $i != "jenkins" ]] && [[ $i != "jenkins-dc" ]]
+      then
+         folderList=("${folderList[@]}" "`docker inspect $i |jq '.[].Mounts[].Source'`")
+      fi
+   done
    echo Stopping containers $containerList
    cmd="docker stop $containers"
    eval $cmd
    echo Removing containers $containerList
-   cmd="docker rm $containers"
+   cmd="docker rm -v $containers"
    eval $cmd
+
+   # remove folders used for mounts
+   for i in "${folderList[@]}"
+   do
+      cmd="rm -rf $i"
+      eval $cmd
+   done
 }
 
 function remove_data_folders ()
@@ -319,9 +346,9 @@ function show_container_warning ()
 
    if [[ $? -eq 0 ]]
    then
-      echo removing
+      echo Removing...
       stop_remove_containers "$containers"
-      remove_data_folders
+      #remove_data_folders
    else
       exit -1
    fi
@@ -425,7 +452,8 @@ get_list ".Demos[].Name"
 
 choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
 #if select menu choice > than available demos then exit
-if [[ $choice -eq $demoCnt ]]
+echo flynn $choice -- $demoCnt
+if [[ $choice -eq $demoCnt ]] || [[ -z $choice ]]
 then
    clear
    echo "Goodbye"
@@ -440,8 +468,8 @@ fi
 
 clear
 echo $choice
-networkJson=`jq ".Demos[$choice].Dependencies.Network" $demofile`
-create_networks "$networkJson"
+networksJson=`jq ".Demos[$choice].Dependencies.Networks" $demofile`
+create_networks "$networksJson"
 
 systemsJson=`jq ".Demos[$choice].Dependencies.Systems" $demofile`
 systemsCnt=`echo $systemsJson |jq ".|length"`
