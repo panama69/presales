@@ -19,6 +19,46 @@
        }
     ]
   },
+  {"Name":"Mobile Center",
+    "Dependencies":
+      {"Networks":[],
+       "Systems":[
+          {"Name":"HPE MC",
+             "Assets":[
+                {"Name":"Postgres",
+                 "Configs":{
+                   "ContainerName":"postgres",
+                   "Image":"postgres:9.3",
+                    "Ports":["5432:5432"],
+                    "Networks":[],
+                    "DataContainers":[],
+                    "EnvironmentVariables":[
+                      "POSTGRES_PASSWORD=Password1"
+                    ],
+                    "Volumes":[]
+                  }
+                },
+                {"Name":"MobileCenter",
+                 "Configs":{
+                    "ContainerName":"hpemc",
+                    "Image":"hpsoftware/hpemc",
+                    "Ports":[],
+                    "Networks":[],
+                    "DataContainers":[],
+                    "EnvironmentVariables":[
+                      "POSTGRES_HOST=localhost_ip",
+                      "POSTGRES_PORT=5432",
+                      "POSTGRES_USER=postgres",
+                      "POSTGRES_PASSWORD=Password1",
+                      "FQDN=localhost_name"
+                  ],
+                    "Volumes":[]}
+                }
+             ]
+          }
+         ]
+      }
+  },
   {"Name":"Octane 12.53.12 - Clean",
     "Dependencies":
       {"Networks":["octane_nw"],

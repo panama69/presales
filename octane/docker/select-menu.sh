@@ -193,6 +193,33 @@ function build_docker_string ()
 
 # args:
 #    1 - Json string object containing configurations
+function start_Postgres ()
+{
+   echo "###"
+   echo "### Example of command need to validate before operational"
+   echo "###"
+   docker_str=$(build_docker_string "$1")
+   cmd="docker run -d --restart=always $docker_str"
+   echo "$cmd"
+   #eval $cmd
+}
+
+# args:
+#    1 - Json string object containing configurations
+function start_MobileCenter ()
+{
+   echo "###"
+   echo "### Example of command need to validate before operational"
+   echo "###"
+   docker_str=$(build_docker_string "$1")
+   cmd="docker run -d --restart=always $docker_str"
+   echo "$cmd"
+   #eval $cmd
+}
+
+
+# args:
+#    1 - Json string object containing configurations
 function start_Jenkins ()
 {
    docker_str=$(build_docker_string "$1")
@@ -302,10 +329,30 @@ function container_list ()
    echo "$containers"
 }
 
+# args
+#   $1 - demo menu choice
+function stop_containers ()
+{
+   containerList=$1
+   echo Stopping containers $containerList
+   cmd="docker stop $containers"
+   eval $cmd
+}
 
 # args
 #   $1 - demo menu choice
-function stop_remove_containers ()
+function start_containers ()
+{
+   echo Need to add a check to see if the the container exists in the stopped state
+   containerList=$1
+   echo Starting containers $containerList
+   cmd="docker start $containers"
+   eval $cmd
+}
+
+# args
+#   $1 - demo menu choice
+function remove_containers ()
 {
    containerList=$1
    #create a list of folder mounts to be removed after container removed
@@ -317,9 +364,7 @@ function stop_remove_containers ()
          folderList=("${folderList[@]}" "`docker inspect $i |jq '.[].Mounts[].Source'`")
       fi
    done
-   echo Stopping containers $containerList
-   cmd="docker stop $containers"
-   eval $cmd
+
    echo Removing containers $containerList
    cmd="docker rm -v $containers"
    eval $cmd
@@ -332,11 +377,6 @@ function stop_remove_containers ()
    done
 }
 
-function remove_data_folders ()
-{
-     sudo rm -rf /opt/octane /opt/oradata /opt/elasticsearch
-}
-
 # args
 #   $1 - demo menu choice
 function show_container_warning ()
@@ -347,8 +387,8 @@ function show_container_warning ()
    if [[ $? -eq 0 ]]
    then
       echo Removing...
-      stop_remove_containers "$containers"
-      #remove_data_folders
+      stop_containers "$containers"
+      remove_containers "$containers"
    else
       exit -1
    fi
@@ -402,13 +442,6 @@ function download_files ()
           cd -; }
 }
 
-function deploy_octane ()
-{
-     create_network $network
-     start_oracle $ora_port $network $ora_container $ora_image
-     start_elasticsearch $network $es_container $es_image
-     start_octane $octane_port $octane_domain $octane_admin_password $network $octane_container $octane_image
-}
 
 # will return an array (list) based on the json query passed
 function get_list ()
@@ -445,7 +478,7 @@ fi
 #
 # show demos one can select from
 #
-cmd=(dialog --menu "Select options:" 22 76 16 )
+cmd=(dialog --backtitle "Demo Menu System" --menu "Select options:" 19 76 12 )
 demoCnt=`jq ".Demos|length" $demofile`
 demosJson=`jq ".Demos" $demofile`
 get_list ".Demos[].Name"
@@ -501,46 +534,4 @@ do
    echo
    echo
 done
-
-exit
-case $choice in
-     1)
-       echo "Creating Octane deployment with data"
-       octane_data=octane-data-0.1.tar.gz
-       oracle_data=oradata-data-0.1.tar.gz
-       have_network_connection
-       if [[ $? ]]
-       then
-            remove_data_folders
-            download_files "octane" "$octane_data"
-            download_files "oradata" "$oracle_data"
-            deploy_octane
-       fi
-       ;;
-     2)
-       echo "Creating empty Octane deployment"
-       octane_data=octane-mt-0.1.tar.gz
-       oracle_data=oradata-mt-0.1.tar.gz
-       have_network_connection
-       if [[ $? ]]
-       then
-            remove_data_folders
-            download_files "octane" "$octane_data"
-            download_files "oradata" "$oracle_data"
-            deploy_octane
-       fi
-       ;;
-     3)
-       echo "Creating new Octane deployment"
-       have_network_connection
-       if [[ $? ]]
-       then
-            remove_data_folders
-            deploy_octane
-       fi
-       ;;
-     4)
-       echo "Good bye"
-       ;;
-esac
 
