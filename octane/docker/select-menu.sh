@@ -90,10 +90,9 @@ is_sudo ()
 ############################################################################### 
 have_network_connection ()
 {
-return 0
-     if [ `ping www.flynnshome.com -c 1|grep -w "0% packet loss"|wc -l` -lt 1 ]
+     if [ `ping $remoteDemoDataRepo -c 1|grep -w "0% packet loss"|wc -l` -lt 1 ]
      then
-          dialog --backtitle "$bt" --title "WARNING" --msgbox "Unable to successfully ping www.flynnshome.com.  Check your network connection" 10 70
+          dialog --backtitle "$bt" --title "WARNING" --msgbox "Unable to successfully ping $remoteDemoDataRepo.  Check your network connection" 10 70
           return 0
      else
           return 1
@@ -893,6 +892,7 @@ remove_images ()
    echo ${cmd[@]} ${options[@]}
    choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
    debug "No removes, selection was $choice"
+   have_network_connection
 }
 
 ############################################################################## 
@@ -923,6 +923,8 @@ remove_demo_data ()
    local cmd=(dialog --backtitle "$bt" --checklist "Demo data files" 18 76 "${#options[@]}")
    local choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
    debug "No removes, selection was $choice"
+
+   have_network_connection
 }
 ############################################################################## 
 #
