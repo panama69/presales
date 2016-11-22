@@ -1,4 +1,33 @@
 {"Demos":[
+  {"Name":"Jenkins Only",
+    "Dependencies":
+      {"Networks":["octane_nw"],
+       "Systems":[
+          {"Name":"Jenkins",
+           "Assets":[
+             {"Name":"Jenkins",
+              "Networks":"octane_nw",
+              "Configs":{
+                 "ContainerName":"jenkins-dc",
+                 "Image":"flynn/jenkins",
+                 "Ports":[],
+                 "IsDataContainer":"true",
+                 "DataContainers":[],
+                 "Volumes":["/var/jenkins_home"]}
+             },
+             {"Name":"Jenkins",
+              "Networks":"octane_nw",
+              "Configs":{
+                 "ContainerName":"jenkins",
+                 "Image":"flynn/jenkins",
+                 "Ports":["8086:8080", "50000:50000"],
+                 "DataContainers":["jenkins-dc"],
+                 "Volumes":[]}
+               }
+             ]}
+         ]
+      }
+  },
   {"Name":"Corndog",
    "Dependencies":[{"Networks":"flynn_nw"}]
   },
@@ -116,6 +145,7 @@
                  "ContainerName":"jenkins-dc",
                  "Image":"flynn/jenkins",
                  "Ports":[],
+                 "IsDataContainer":"true",
                  "DataContainers":[],
                  "Volumes":["/var/jenkins_home"]}
              },
@@ -200,6 +230,7 @@
                  "ContainerName":"jenkins-dc",
                  "Image":"flynn/jenkins",
                  "Ports":[],
+                 "IsDataContainer":"true",
                  "DataContainers":[],
                  "Volumes":["/var/jenkins_home"]}
              },
@@ -223,10 +254,10 @@
       {"Networks":["octane_nw"],
        "Systems":[
           {"Name":"Octane",
-             "Assets":[
+           "Assets":[
                 {"Name":"OracleXE",
                  "Data":{
-                   "File":"oradata-data-0.2.tar.gz",
+                   "File":"oradata-data-0.3.tar.gz",
                    "Path":"/opt/oradata"
                  },
                  "Configs":{
@@ -251,7 +282,7 @@
                 },
                 {"Name":"Octane",
                  "Data":{
-                   "File":"octane-data-0.2.tar.gz",
+                   "File":"octane-data-0.3.tar.gz",
                    "Path":"/opt/octane"
                  },
                  "Configs":{
@@ -284,6 +315,7 @@
                  "ContainerName":"jenkins-dc",
                  "Image":"flynn/jenkins",
                  "Ports":[],
+                 "IsDataContainer":"true",
                  "DataContainers":[],
                  "Volumes":["/var/jenkins_home"]}
              },
@@ -296,9 +328,7 @@
                  "DataContainers":["jenkins-dc"],
                  "Volumes":[]}
                }
-             ]},
-          {"Name":"AOS",
-           "Assets":[]}
+             ]}
          ]
       }
   },
@@ -359,6 +389,7 @@
                  "ContainerName":"jenkins-dc",
                  "Image":"flynn/jenkins",
                  "Ports":[],
+                 "IsDataContainer":"true",
                  "DataContainers":[],
                  "Volumes":["/var/jenkins_home"]}
              },

@@ -37,8 +37,11 @@
 bt="HPE Demo Menu"
 
 # general
+menuH=19
+menuW=76
 localDemoDataRepo="/opt"
-remoteDemoDataRepo="http://flynnshome.com/downloads"
+remoteDemoDataHost="flynnshome.com"
+remoteDemoDataRepo="http://$remoteDemoDataHost/downloads"
 #demofile=$1
 
 debug ()
@@ -60,7 +63,7 @@ have_demofile ()
    if [ $1 -ne 1 ]
    then
       dialog --backtitle "$bt" --title "Missing json file" \
-      --msgbox "Missing the json demo configuration file.\n\nThis is the file that determines the arguments needed for the images and containers used for the demos.\n\nTo start the menu system use the following format:\n\n     sudo ./select-menu.sh democonfig.json" 19 76
+      --msgbox "Missing the json demo configuration file.\n\nThis is the file that determines the arguments needed for the images and containers used for the demos.\n\nTo start the menu system use the following format:\n\n     sudo ./select-menu.sh democonfig.json" $menuH $menuW
       exit -1
    fi
 }
@@ -87,15 +90,22 @@ is_sudo ()
 # on re-pulling the images.  This is mostly used as a warning rather than to
 # prevent individuals from removing images when not connected to the internet
 #
+# args:
+#    none
+#
+# return
+#    0 - can successfully ping external site
+#    1 - failed to ping external site
+#
 ############################################################################### 
 have_network_connection ()
 {
-     if [ `ping $remoteDemoDataRepo -c 1|grep -w "0% packet loss"|wc -l` -lt 1 ]
+     if [ `ping "$remoteDemoDataHost" -c 1|grep -w "0% packet loss"|wc -l` -eq 0 ]
      then
-          dialog --backtitle "$bt" --title "WARNING" --msgbox "Unable to successfully ping $remoteDemoDataRepo.  Check your network connection" 10 70
-          return 0
-     else
+          dialog --backtitle "$bt" --title "WARNING" --msgbox "Unable to successfully ping $remoteDemoDataHost.  Check your network connection" 10 70
           return 1
+     else
+          return 0
      fi
 }
 
@@ -257,6 +267,13 @@ build_docker_string ()
                str="$s$str"
             fi
             ;;
+         IsDataContainer)
+            value=${value//\"}
+            if [ "$value" = "true" ]
+            then
+               local dataContainer="/bin/echo data-container" 
+            fi
+            ;;
          DataContainers)
             count=`echo $value|jq ".|length"`
             if [ "$count" -gt 0 ]
@@ -303,7 +320,12 @@ build_docker_string ()
       str="ERROR -- no container name or docker image specified"
       exit -1
    fi
-   
+
+   if [ -n "$dataContainer" ]
+   then
+      str="$str $dataContainer"
+   fi
+
    echo "$str"
 }
 
@@ -351,7 +373,13 @@ start_MobileCenter ()
 start_Jenkins ()
 {
    local docker_str=$(build_docker_string "$1")
-   local cmd="docker run -d --restart=always $docker_str"
+   local value=`echo $1|jq -r ".Configs.IsDataContainer"`
+   if [ "$value" = "true" ]
+   then
+      local cmd="docker create $docker_str"
+   else
+      local cmd="docker run -d --restart=always $docker_str"
+   fi
    echo "$cmd"
    eval $cmd
 }
@@ -508,8 +536,7 @@ container_list ()
 stop_containers ()
 {
    local containerList=$1
-debug $1
-   echo Stopping containers $containerList
+   echo "Stopping containers:\n$containerList\n-------------------"
    local cmd="docker stop $containers"
    eval $cmd
 }
@@ -551,7 +578,7 @@ remove_containers ()
       fi
    done
 
-   echo Removing containers $containerList
+   echo "Removing containers:\n$containerList\n-------------------"
    # using the -v to remove any volume mounts with the container
    local cmd="docker rm -v $containers"
    eval $cmd
@@ -593,13 +620,13 @@ remove_images ()
          local title="$i"
       fi
    done
-   local cmd=(dialog --backtitle "$bt" --checklist "          $title" 18 76 $menuItem)
+   local cmd=(dialog --backtitle "$bt" --checklist "          $title" $menuH $menuW $menuItem)
    local choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
 
    #have_network_connection
    #if [ $? -eq 0 ]
    #then
-   #   cmd=(dialog --backtitle "$bt" --title "WARNING -- WARNING -- WARNING" --defaultno --yesno "No network connection.  Are you sure you wish to remove?  You will need to establish a network connection before you can re-download any images" 19 76)
+   #   cmd=(dialog --backtitle "$bt" --title "WARNING -- WARNING -- WARNING" --defaultno --yesno "No network connection.  Are you sure you wish to remove?  You will need to establish a network connection before you can re-download any images" $menuH $menuW)
    #   $("${cmd[@]}" 2>&1 >/dev/tty)
    #   if [ $? -eq 0 ]
    #   then 
@@ -645,14 +672,13 @@ remove_images ()
 show_container_warning ()
 {
    local containers=$(container_list "$1" "$2")
-   local cmd=(dialog --backtitle "$bt" --title "WARNING" --defaultno --yesno "One of these containers exist:\n     $containers\nYou must take care of them before performing this operation.\n\n         DO YOU WANT TO STOP AND REMOVE THEM" 19 76)
+   local cmd=(dialog --backtitle "$bt" --title "WARNING" --defaultno --yesno "One of these containers exist:\n     $containers\nYou must take care of them before performing this operation.\n\n         DO YOU WANT TO STOP AND REMOVE THEM" $menuH $menuW)
 
    ("${cmd[@]}" 2>&1 >/dev/tty)
    choice=$?
    if [ $choice -eq 0 ]
    then
       echo Removing...
-debug "flynn: $containers"
       stop_containers "$containers"
       remove_containers "$containers"
       return 0
@@ -706,7 +732,6 @@ download_files ()
        local rootPath=${restoreLocation%/*}
        local targetFolder=${restoreLocation##*/}
        local file=`echo $tmpJson |jq -r ".File"`
-
        echo "Processing: $file"
        if [ -e "$localDemoDataRepo/$file" ]
        then
@@ -778,10 +803,62 @@ show_demos ()
    #get the length of the array ${#options[@]} then divide by 2
    #and must use $(( )) to perform the division expression and return the result
    local demoEntries=$((${#options[@]}/2))
-   local cmd=(dialog --backtitle "$bt" --menu "Select options:" 19 76 $demoEntries)
+   local cmd=(dialog --backtitle "$bt" --menu "Select options:" $menuH $menuW $demoEntries)
    local choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
    
    echo "$choice"
+}
+
+############################################################################## 
+#
+# Start Containers
+#
+# args:
+#    1 - json string with available demos
+#
+##############################################################################
+start_demo_containers ()
+{
+   local jsonStr=$1
+   local deploy=1
+   local ret=$(show_demos "$jsonStr")
+   if [ -n "$ret" ]
+   then
+      local containers=$(container_list "$ret" "$jsonStr")
+      echo "###########################################"
+      echo "###########################################"
+      echo "######" Starting System: `echo $jsonStr |jq ".[$ret].Name"`
+      start_containers "$containers"
+      echo "###########################################"
+      sleep 5
+   fi
+}
+
+############################################################################## 
+#
+# Stop Containers
+#
+# args:
+#    1 - json string with available demos
+#
+##############################################################################
+stop_demo_containers ()
+{
+   local jsonStr=$1
+   local deploy=1
+   local ret=$(show_demos "$jsonStr")
+   if [ -n "$ret" ]
+   then
+      # json arrays are 0 (zero based) so must subtract 1 to compensate
+      local jsonIdx=$(($ret-1))
+      local containers=$(container_list "$jsonIdx" "$jsonStr")
+      echo "###########################################"
+      echo "###########################################"
+      echo "######" Stopping System: `echo $jsonStr |jq ".[$jsonIdx].Name"`
+      stop_containers "$containers"
+      echo "###########################################"
+      sleep 5
+   fi
 }
 
 ############################################################################## 
@@ -799,59 +876,113 @@ deploy_containers ()
    local ret=$(show_demos "$jsonStr")
    if [ -n "$ret" ]
    then
-      local x=$(containers_exist "$ret" "$jsonStr")
-      if [ $x -ne 0 ]
+      echo "Menu selection was: $ret"
+      # account for json array 0 (zero) base
+      ret=$(($ret-1))
+      echo "Adjusted for zero based Json array: $ret"
+      if [ -n "$ret" ]
       then
-         deploy=$(show_container_warning "$ret" "$jsonStr")
-      else
-         deploy=0
-      fi
+         local x=$(containers_exist "$ret" "$jsonStr")
+         if [ $x -ne 0 ]
+         then
+            deploy=$(show_container_warning "$ret" "$jsonStr")
+         else
+            deploy=0
+         fi
+         if [ $deploy -eq 0 ]
+         then
+            clear
+            echo $ret
+            local networksJson=`echo $jsonStr |jq ".[$ret].Dependencies.Networks"`
+            create_networks "$networksJson"
+            local systemsJson=`echo $jsonStr |jq ".[$ret].Dependencies.Systems"`
+            local systemsCnt=`echo $systemsJson |jq ".|length"`
+            echo System Count: "$systemsCnt"
 
-      if [ $deploy -eq 0 ]
-      then
-         clear
-         echo $ret
-         local networksJson=`echo $jsonStr |jq ".[$ret].Dependencies.Networks"`
-         create_networks "$networksJson"
-         local systemsJson=`echo $jsonStr |jq ".[$ret].Dependencies.Systems"`
-         local systemsCnt=`echo $systemsJson |jq ".|length"`
-         echo System Count: "$systemsCnt"
-
-         for ((systemsIndex=0; systemsIndex<$systemsCnt; systemsIndex++))
-         do
-            echo "###########################################"
-            echo "###########################################"
-            echo "######" Deploying System: `echo $systemsJson |jq ".[$systemsIndex].Name"`
-            local assetsJson=`echo $systemsJson |jq ".[$systemsIndex].Assets"`
-            local assetsCnt=`echo $assetsJson |jq ".|length"`
-            for ((assetsIndex=0; assetsIndex<assetsCnt; assetsIndex++))
+            for ((systemsIndex=0; systemsIndex<$systemsCnt; systemsIndex++))
             do
-               local assetName=`echo $assetsJson |jq -r ".[$assetsIndex].Name"`
-               #assetName=${assetName//\"}
-               local dataJson=`echo $assetsJson |jq ".[$assetsIndex].Data"`
-               if [ `echo $dataJson |jq ".|length"` -eq 2 ]
-               then
-                  download_files "$dataJson"
-               fi
-               echo
                echo "###########################################"
-               echo "Deploying Asset: $assetName"
-               local assetJson=`echo $assetsJson |jq ".[$assetsIndex]"`
+               echo "###########################################"
+               echo "######" Deploying System: `echo $systemsJson |jq ".[$systemsIndex].Name"`
+               local assetsJson=`echo $systemsJson |jq ".[$systemsIndex].Assets"`
+               local assetsCnt=`echo $assetsJson |jq ".|length"`
+               for ((assetsIndex=0; assetsIndex<assetsCnt; assetsIndex++))
+               do
+                  local assetName=`echo $assetsJson |jq -r ".[$assetsIndex].Name"`
+                  #assetName=${assetName//\"}
+                  local dataJson=`echo $assetsJson |jq ".[$assetsIndex].Data"`
+                  if [ `echo $dataJson |jq ".|length"` -eq 2 ]
+                  then
+                     download_files "$dataJson"
+                  fi
+                  echo
+                  echo "###########################################"
+                  echo "Deploying Asset: $assetName"
+                  local assetJson=`echo $assetsJson |jq ".[$assetsIndex]"`
 
-               # It was intentional to have generic funciton call
-               # as different assets had different ways to montior/log
-               # how to see if they were up completely.  Open to ideas
-               # to not be dependent on each asset name being a key to work
-               start_"$assetName" "$assetJson"
-               echo "###########################################"
+                  # It was intentional to have generic funciton call
+                  # as different assets had different ways to montior/log
+                  # how to see if they were up completely.  Open to ideas
+                  # to not be dependent on each asset name being a key to work
+                  start_"$assetName" "$assetJson"
+                  echo "###########################################"
+                  echo
+               done
+               echo
                echo
             done
-            echo
-            echo
-         done
-      else
-         echo Deployment aborted
+         else
+            echo Deployment aborted
+         fi
       fi
+   fi
+exit
+}
+
+############################################################################## 
+#
+# List Containers
+#
+# args:
+#    none
+#
+##############################################################################
+list_containers ()
+{
+   local cmd="docker ps -a --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'"
+   local tmp=$(eval $cmd)
+
+   local tmpFile="$(mktemp)"
+   echo "$tmp">$tmpFile
+   local cmd=(dialog --backtitle "$bt" --textbox $tmpFile $menuH $menuW)
+   `"${cmd[@]}" 2>&1 >/dev/tty`
+   `rm -f $tmpFile`
+}
+
+############################################################################## 
+#
+# Remove Containers
+#
+# args:
+#    1 - json string with available demos
+#
+##############################################################################
+remove_demo_containers ()
+{
+   local jsonStr=$1
+   local deploy=1
+   local ret=$(show_demos "$jsonStr")
+   if [ -n "$ret" ]
+   then
+      # json arrays are 0 (zero based) so must subtract 1 to compensate
+      local jsonIdx=$(($ret-1))
+      local containers=$(container_list "$jsonIdx" "$jsonStr")
+      echo "###########################################"
+      echo "###########################################"
+      echo "######" Removing System: `echo $jsonStr |jq ".[$jsonIdx].Name"`
+      remove_containers "$containers"
+      echo "###########################################"
+      sleep 5
    fi
 }
 
@@ -888,11 +1019,11 @@ remove_images ()
          title="$i"
       fi
    done
-   cmd=(dialog --backtitle "$bt" --checklist "          $title" 18 76 $menuItem)
+   cmd=(dialog --backtitle "$bt" --checklist "          $title" $menuH $menuW $menuItem)
    echo ${cmd[@]} ${options[@]}
    choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
-   debug "No removes, selection was $choice"
-   have_network_connection
+   debug "No removes performed\nTo be implemented\nselection was >$choice<"
+   #have_network_connection
 }
 
 ############################################################################## 
@@ -906,10 +1037,10 @@ remove_images ()
 remove_demo_data ()
 {
    unset options
+   local deleteList=()
    local files=(`ls -a $localDemoDataRepo/*.tar.gz`)
    local index=1
    local menuItem=1
-#   IFS=$'\n'
    for i in ${files[@]}
    do
       options[index]=$menuItem
@@ -920,12 +1051,45 @@ remove_demo_data ()
       let index++
       let menuItem++
    done
-   local cmd=(dialog --backtitle "$bt" --checklist "Demo data files" 18 76 "${#options[@]}")
+   local cmd=(dialog --backtitle "$bt" --checklist "Demo data files" $menuH $menuW "${#options[@]}")
+   # cancel was selected
    local choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
-   debug "No removes, selection was $choice"
+   if [ -z $choice ]
+   then
+      return
+   fi
 
    have_network_connection
+   if [ $? -ne 0 ]
+   then
+      cmd=(dialog --backtitle "$bt" --title "WARNING" --defaultno --yesno "No network connection.\n\nARE YOU SURE YOU WISH TO DELETE\n\nRecomend to wait so you can start demos that use this data." $menuH $menuW)
+      ("${cmd[@]}" 2>&1 >/dev/tty)
+      #Proceed WithOut Network
+      local proceedWoNet=$?
+   fi
+
+   # Make list of files to delete
+   local x=0
+   for i in $choice
+   do
+      # think about how the array is structured.
+      local item=$(($i*3-1))
+      deleteList[$x]=${options[$item]}
+      let x++
+   done
+   cmd=(dialog --backtitle "$bt" --title "WARNING" --defaultno --yesno "Are you sure you wish to delete the files?" 10 76)
+   ("${cmd[@]}" 2>&1 >/dev/tty)
+   local proceed=$?
+   if [ $proceed -eq 0 ]
+   then
+      for ((i=0; i<${#deleteList[@]}; i++))
+      do
+         #debug "Deleteing $i: ${deleteList[$i]}"
+         `rm -f ${deleteList[$i]}`
+      done
+   fi
 }
+
 ############################################################################## 
 #
 # Main Menu Selections
@@ -933,9 +1097,9 @@ remove_demo_data ()
 ##############################################################################
 main_menu ()
 {
-   declare -a options=(1 "Start Containers" 2 "Stop Containers" 3 "Deploy Containers" 4 "Remove Containers" 5 "Remove Images" 6 "Remove Demo Data")
+   declare -a options=(1 "Start Demo Containers" 2 "Stop Demo Containers" 3 "Deploy Containers" 4 "List Containers" 5 "Remove Containers" 5 "Remove Images" 7 "Remove Demo Data")
    local itemCount=$((${#options[@]}/2))
-   local cmd=(dialog --backtitle "$bt" --menu "Select options:" 19 76 $itemCount)
+   local cmd=(dialog --backtitle "$bt" --menu "Main Menu:" $menuH $menuW $itemCount)
    local choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
 
    echo "${options[$(($choice*2-1))]}"
@@ -961,18 +1125,25 @@ do
       exit
    else
       case "$ret" in
-         "Start Containers")
-            `dialog --msgbox "Selected: $ret" 0 0 2>&1>/dev/tty`
+         "Start Demo Containers")
+            #`dialog --msgbox "Selected: $ret" 0 0 2>&1>/dev/tty`
+            start_demo_containers "$demosJson"
             ;;
-         "Stop Containers")
-            `dialog --msgbox "Selected: $ret" 0 0 2>&1>/dev/tty`
+         "Stop Demo Containers")
+            #`dialog --msgbox "Selected: $ret" 0 0 2>&1>/dev/tty`
+            stop_demo_containers "$demosJson"
             ;;
          "Deploy Containers")
             #`dialog --msgbox "Selected: $ret" 0 0 2>&1>/dev/tty`
             deploy_containers "$demosJson"
             ;;
+         "List Containers")
+            #`dialog --msgbox "Selected: $ret" 0 0 2>&1>/dev/tty`
+            list_containers
+            ;;
          "Remove Containers")
-            `dialog --msgbox "Selected: $ret" 0 0 2>&1>/dev/tty`
+            #`dialog --msgbox "Selected: $ret" 0 0 2>&1>/dev/tty`
+             remove_demo_containers "$demosJson"
             ;;
          "Remove Images")
             #`dialog --msgbox "Selected: $ret" 0 0 2>&1>/dev/tty`
