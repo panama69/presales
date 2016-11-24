@@ -3,28 +3,28 @@
     "Dependencies":
       {"Networks":["octane_nw"],
        "Systems":[
-          {"Name":"Jenkins",
-           "Assets":[
-             {"Name":"Jenkins",
-              "Networks":"octane_nw",
-              "Configs":{
-                 "ContainerName":"jenkins-dc",
-                 "Image":"flynn/jenkins",
-                 "Ports":[],
-                 "IsDataContainer":"true",
-                 "DataContainers":[],
-                 "Volumes":["/var/jenkins_home"]}
-             },
-             {"Name":"Jenkins",
-              "Networks":"octane_nw",
-              "Configs":{
-                 "ContainerName":"jenkins",
-                 "Image":"flynn/jenkins",
-                 "Ports":["8086:8080", "50000:50000"],
-                 "DataContainers":["jenkins-dc"],
-                 "Volumes":[]}
-               }
-             ]}
+         {"Name":"Jenkins",
+            "Assets":[
+              {"Name":"Jenkins",
+               "Configs":{
+                  "ContainerName":"jenkins-dc",
+                  "Image":"flynn/jenkins",
+                  "Ports":[],
+                  "Networks":["octane_nw"],
+                  "IsDataContainer":"true",
+                  "DataContainers":[],
+                  "Volumes":["/var/jenkins_home"]}
+              },
+              {"Name":"Jenkins",
+               "Configs":{
+                  "ContainerName":"jenkins",
+                  "Image":"flynn/jenkins",
+                  "Ports":["8086:8080", "50000:50000"],
+                  "Networks":["octane_nw"],
+                  "DataContainers":["jenkins-dc"],
+                  "Volumes":[]}
+                }
+            ]}
          ]
       }
   },
@@ -138,26 +138,26 @@
              ]
           },
           {"Name":"Jenkins",
-           "Assets":[
-             {"Name":"Jenkins",
-              "Networks":"octane_nw",
-              "Configs":{
-                 "ContainerName":"jenkins-dc",
-                 "Image":"flynn/jenkins",
-                 "Ports":[],
-                 "IsDataContainer":"true",
-                 "DataContainers":[],
-                 "Volumes":["/var/jenkins_home"]}
-             },
-             {"Name":"Jenkins",
-              "Networks":"octane_nw",
-              "Configs":{
-                 "ContainerName":"jenkins",
-                 "Image":"flynn/jenkins",
-                 "Ports":["8086:8080", "50000:50000"],
-                 "DataContainers":["jenkins-dc"],
-                 "Volumes":[]}
-               }
+             "Assets":[
+               {"Name":"Jenkins",
+                "Configs":{
+                   "ContainerName":"jenkins-dc",
+                   "Image":"flynn/jenkins",
+                   "Ports":[],
+                   "Networks":["octane_nw"],
+                   "IsDataContainer":"true",
+                   "DataContainers":[],
+                   "Volumes":["/var/jenkins_home"]}
+               },
+               {"Name":"Jenkins",
+                "Configs":{
+                   "ContainerName":"jenkins",
+                   "Image":"flynn/jenkins",
+                   "Ports":["8086:8080", "50000:50000"],
+                   "Networks":["octane_nw"],
+                   "DataContainers":["jenkins-dc"],
+                   "Volumes":[]}
+                 }
              ]},
           {"Name":"AOS",
            "Assets":[]}
@@ -223,26 +223,26 @@
              ]
           },
           {"Name":"Jenkins",
-           "Assets":[
-             {"Name":"Jenkins",
-              "Networks":"octane_nw",
-              "Configs":{
-                 "ContainerName":"jenkins-dc",
-                 "Image":"flynn/jenkins",
-                 "Ports":[],
-                 "IsDataContainer":"true",
-                 "DataContainers":[],
-                 "Volumes":["/var/jenkins_home"]}
-             },
-             {"Name":"Jenkins",
-              "Networks":"octane_nw",
-              "Configs":{
-                 "ContainerName":"jenkins",
-                 "Image":"flynn/jenkins",
-                 "Ports":["8086:8080", "50000:50000"],
-                 "DataContainers":["jenkins-dc"],
-                 "Volumes":[]}
-               }
+             "Assets":[
+               {"Name":"Jenkins",
+                "Configs":{
+                   "ContainerName":"jenkins-dc",
+                   "Image":"flynn/jenkins",
+                   "Ports":[],
+                   "Networks":["octane_nw"],
+                   "IsDataContainer":"true",
+                   "DataContainers":[],
+                   "Volumes":["/var/jenkins_home"]}
+               },
+               {"Name":"Jenkins",
+                "Configs":{
+                   "ContainerName":"jenkins",
+                   "Image":"flynn/jenkins",
+                   "Ports":["8086:8080", "50000:50000"],
+                   "Networks":["octane_nw"],
+                   "DataContainers":["jenkins-dc"],
+                   "Volumes":[]}
+                 }
              ]},
           {"Name":"AOS",
            "Assets":[]}
@@ -308,26 +308,26 @@
              ]
           },
           {"Name":"Jenkins",
-           "Assets":[
-             {"Name":"Jenkins",
-              "Networks":"octane_nw",
-              "Configs":{
-                 "ContainerName":"jenkins-dc",
-                 "Image":"flynn/jenkins",
-                 "Ports":[],
-                 "IsDataContainer":"true",
-                 "DataContainers":[],
-                 "Volumes":["/var/jenkins_home"]}
-             },
-             {"Name":"Jenkins",
-              "Networks":"octane_nw",
-              "Configs":{
-                 "ContainerName":"jenkins",
-                 "Image":"flynn/jenkins",
-                 "Ports":["8086:8080", "50000:50000"],
-                 "DataContainers":["jenkins-dc"],
-                 "Volumes":[]}
-               }
+             "Assets":[
+               {"Name":"Jenkins",
+                "Configs":{
+                   "ContainerName":"jenkins-dc",
+                   "Image":"flynn/jenkins",
+                   "Ports":[],
+                   "Networks":["octane_nw"],
+                   "IsDataContainer":"true",
+                   "DataContainers":[],
+                   "Volumes":["/var/jenkins_home"]}
+               },
+               {"Name":"Jenkins",
+                "Configs":{
+                   "ContainerName":"jenkins",
+                   "Image":"flynn/jenkins",
+                   "Ports":["8086:8080", "50000:50000"],
+                   "Networks":["octane_nw"],
+                   "DataContainers":["jenkins-dc"],
+                   "Volumes":[]}
+                 }
              ]}
          ]
       }
@@ -384,21 +384,21 @@
           {"Name":"Jenkins",
            "Assets":[
              {"Name":"Jenkins",
-              "Networks":"octane_nw",
               "Configs":{
                  "ContainerName":"jenkins-dc",
                  "Image":"flynn/jenkins",
                  "Ports":[],
+                 "Networks":["octane_nw"],
                  "IsDataContainer":"true",
                  "DataContainers":[],
                  "Volumes":["/var/jenkins_home"]}
              },
              {"Name":"Jenkins",
-              "Networks":"octane_nw",
               "Configs":{
                  "ContainerName":"jenkins",
                  "Image":"flynn/jenkins",
                  "Ports":["8086:8080", "50000:50000"],
+                 "Networks":["octane_nw"],
                  "DataContainers":["jenkins-dc"],
                  "Volumes":[]}
                }
