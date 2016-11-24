@@ -374,6 +374,8 @@ start_Jenkins ()
 {
    local docker_str=$(build_docker_string "$1")
    local value=`echo $1|jq -r ".Configs.IsDataContainer"`
+   # hack making the assumption only one network element right now AND
+   local containerName=`echo $1 |jq -r ".Configs.ContainerName"`
    if [ "$value" = "true" ]
    then
       local cmd="docker create $docker_str"
@@ -382,6 +384,20 @@ start_Jenkins ()
    fi
    echo "$cmd"
    eval $cmd
+
+   # if not a data container
+   if [ "$value" = "null" ]
+   then
+      # Jenkins and Octane are on the same network
+      local network=`echo $1 |jq -r ".Configs.Networks[0]"`
+      # hack to get Jenkins to connect to Octane
+      # pull the ipaddress and hostname from the docker file to append to the
+      # /etc/hosts file in the Jenkins container
+      local hostsEntry=$(docker inspect --format "{{.NetworkSettings.Networks.$network.IPAddress}}     {{.Config.Hostname}}" octane)
+      cmd="docker exec $containerName /bin/bash -c 'echo $hostsEntry >> /etc/hosts'"
+      echo "$cmd"
+      eval $cmd
+   fi
 }
 
 ############################################################################### 
@@ -678,7 +694,7 @@ show_container_warning ()
    choice=$?
    if [ $choice -eq 0 ]
    then
-      echo Removing...
+      echo "Removing..."
       stop_containers "$containers"
       remove_containers "$containers"
       return 0
@@ -891,7 +907,6 @@ deploy_containers ()
          fi
          if [ $deploy -eq 0 ]
          then
-            clear
             echo $ret
             local networksJson=`echo $jsonStr |jq ".[$ret].Dependencies.Networks"`
             create_networks "$networksJson"
@@ -936,7 +951,6 @@ deploy_containers ()
          fi
       fi
    fi
-exit
 }
 
 ############################################################################## 
