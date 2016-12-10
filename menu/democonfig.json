@@ -28,26 +28,6 @@
          ]
       }
   },
-  {"Name":"Corndog",
-   "Dependencies":[{"Networks":"flynn_nw"}]
-  },
-  {"Name":"Prontopuff",
-   "Dependencies":[
-       {"Networks":"panama_nw",
-        "Systems":[
-            {"Name":"Octane",
-             "Assets":[]
-            },
-            {"Name":"Jenkins",
-             "Assets":[]
-            },
-            {"Name":"AOS",
-             "Assets":[]
-            }
-         ]
-       }
-    ]
-  },
   {"Name":"Mobile Center",
     "Dependencies":
       {"Networks":[],
@@ -140,6 +120,9 @@
           {"Name":"Jenkins",
              "Assets":[
                {"Name":"Jenkins",
+                 "Data":{
+                   "File":"jenkins-dc-clean-0.1.tar.gz"
+                 },
                 "Configs":{
                    "ContainerName":"jenkins-dc",
                    "Image":"flynn/jenkins",
@@ -172,7 +155,7 @@
              "Assets":[
                 {"Name":"OracleXE",
                  "Data":{
-                   "File":"oradata-mt-0.2.tar.gz",
+                   "File":"oradata-mt-0.1.tar.gz",
                    "Path":"/opt/oradata"
                  },
                  "Configs":{
@@ -197,7 +180,7 @@
                 },
                 {"Name":"Octane",
                  "Data":{
-                   "File":"octane-mt-0.2.tar.gz",
+                   "File":"octane-mt-0.1.tar.gz",
                    "Path":"/opt/octane"
                  },
                  "Configs":{
@@ -225,7 +208,10 @@
           {"Name":"Jenkins",
              "Assets":[
                {"Name":"Jenkins",
-                "Configs":{
+                 "Data":{
+                   "File":"jenkins-dc-mt-0.1.tar.gz"
+                 },
+                 "Configs":{
                    "ContainerName":"jenkins-dc",
                    "Image":"flynn/jenkins",
                    "Ports":[],
@@ -257,7 +243,7 @@
            "Assets":[
                 {"Name":"OracleXE",
                  "Data":{
-                   "File":"oradata-data-0.3.tar.gz",
+                   "File":"oradata-data-0.1.tar.gz",
                    "Path":"/opt/oradata"
                  },
                  "Configs":{
@@ -282,7 +268,7 @@
                 },
                 {"Name":"Octane",
                  "Data":{
-                   "File":"octane-data-0.3.tar.gz",
+                   "File":"octane-data-0.1.tar.gz",
                    "Path":"/opt/octane"
                  },
                  "Configs":{
@@ -407,6 +393,39 @@
            "Assets":[]}
          ]
       }
+  },
+  {"Name":"Octane 12.53.16 alpha - test",
+    "Dependencies":
+      {"Networks":["octane_nw"],
+       "Systems":[
+          {"Name":"Octane",
+             "Assets":[
+                {"Name":"OracleXE",
+                 "Configs":{
+                   "ContainerName":"octane_oracle",
+                   "Image":"sath89/oracle-xe-11g",
+                    "Ports":["9080:8080"],
+                    "Networks":["octane_nw"],
+                    "DataContainers":[],
+                    "EnvironmentVariables":[],
+                    "Volumes":["/opt/oradata:/u01/app/oracle"]
+                  }
+                },
+                {"Name":"ElasticSearch",
+                 "Configs":{
+                    "ContainerName":"octane_es",
+                    "Image":"elasticsearch:2.4",
+                    "Ports":[],
+                    "Networks":["octane_nw"],
+                    "DataContainers":[],
+                    "EnvironmentVariables":["ES_HEAP_SIZE=4G"],
+                    "Volumes":["/opt/elasticsearch/data:/usr/share/elasticsearch/data"]}
+                }
+             ]
+          }
+         ]
+      }
   }
+
  ]
 }
