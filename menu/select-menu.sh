@@ -753,6 +753,15 @@ download_files ()
        then
             echo "$file" exists already locally so no need to download
        else
+            #
+            # Consider the following to check if download was good
+            # local response=$(curl -I --write-out %{http_code} -O "$remoteDemoDataRepo/$file")
+            # if [ "$response" -eq 200 ]
+            # then
+            #    process as good
+            # else
+            #    process as bad
+            # if
             cd "$rootPath" && { \
                curl -O "$remoteDemoDataRepo/$file" ; \
                cd -; }
