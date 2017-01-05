@@ -1,5 +1,6 @@
 FROM ubuntu:16.04
-MAINTAINER Sven Dowideit <SvenDowideit@docker.com>
+# Original set up for the sshd came from https://docs.docker.com/engine/examples/running_ssh_service/
+MAINTAINER dave flynn <flynn@hpe.com>
 
 RUN apt-get update && apt-get install -y openssh-server git curl
 RUN mkdir /var/run/sshd
